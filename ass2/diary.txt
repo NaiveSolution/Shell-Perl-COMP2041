@@ -1,0 +1,32 @@
+<Subset-0>
+
+Date    Start   Stop    Activity        Comments
+29/7/20 11:00   11:10   Reading         Brief skim read through the assignment, understanding various forms of shell code expressions
+29/7/20 11:15   11:16   Reading         Reading through past diary for ass1, understanding how to improve my shoddy method of coding.
+31/7/20 17:00   17:10   Coding          Shamelessly copied Andrews code from the lecture, used that as a starting point
+01/8/20 14:00   15:00   Coding          Started coding up echo and =, had to think about the different forms each operation can take
+02/8/20 11:00   13:00   Coding          Doing the finishing touches on subset 0, I started to adapt my code for the future subsets. Turns out
+                                        that the later subsets are designed to break your quick and dirty solutions for the easier subsets.
+
+<Subset-1/2>
+
+Date    Start   Stop    Activity        Comments
+5/8/20  13:33   13:40   Coding          Implementation of the low hanging fruit of subset 1 - exit, read and cd
+5/8/20  13:40   14:40   Coding          One hour spent on trying to get the for loops working correctly for all possible cases
+5/8/20  14:40   14:45   Coding          Fixed up all the fi's, done's, do's, then's
+5/8/20  15:00   16:30   Coding          Basically copied the implementation of 'if' and applied it to when, else, elif
+9/8/20  10:00   10:10   Coding          Implementation of some special arguments - $1 $2 $3 etc
+9/8/20  12:00   12:30   Coding          Started on 'test / [' - programmed the really obvious and simple cases
+9/8/20  12:30	14:20	Coding		    It has dawned on me that shell testing (test/[) will take significantly more thought if i were to attain subset3
+
+<Subset-3>
+Date    Start   Stop    Activity        Comments
+9/8/20  14:20   16:20   Coding          Implementation of `` and $(()). This took longer than expected. I opted for tackling expr in subset-3 because
+                                        its related to $(()).
+9/8/20  16:20   19:40   Testing         Basically sat on https://regex101.com for hours testing each of my current implementations so far
+10/8/20 10:30   18:00   Testing         Same as the day before. Visited https://regex101.com for hours testing each of my current implementations so far,
+                                        making tweaks to each regex so that they are more general and less specific to each case.
+11/8/20 10:00   16:30   Testing         Everything has been implemented from subsets 0-3, most of my time is now just tweaking/testing the regexes
+13/8/20 12:00   3:17    Coding          I have been adding a lot of the functionality of subset 4 into my subset 3 module. Finished implementation of
+                                        subroutines in perl. Most of my time on this whole assignment has just been testing regexes on https://regex101.com.
+                                        At this point I am very much over the assignment and I have given up on trying to get subset 4 fully working.
