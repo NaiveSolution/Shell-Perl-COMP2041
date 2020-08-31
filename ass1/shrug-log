@@ -1,0 +1,28 @@
+#!/bin/dash
+# Inputs:
+# none
+
+# Description:
+# Prints out the COMMIT_LOG file.
+# Fails if the user provides any argument, or there are no commits yet
+
+# Part of the implementation of Shrug, which is a subset of Git
+
+# Written by Tariq
+
+#set -x
+
+if [ -z "$(ls .shrug/Repository)" ]
+then
+	echo shrug-log: error: your repository does not have any commits yet
+	exit 0
+fi
+
+if [ "$#" -gt 0 ]
+then
+	echo usage: shrug-log
+	exit 0
+fi
+
+tac .shrug/COMMIT_LOG
+

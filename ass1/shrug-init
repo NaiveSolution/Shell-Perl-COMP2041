@@ -1,0 +1,39 @@
+#!/bin/dash
+# Inputs:
+# None
+
+# Description:
+# Create a dot file directory called '.shrug' in the cwd.
+# Fails if the cwd already has a directory called '.shrug' in it.
+# If a user inputs Arg1 (alphanumeric characters only), then shrug-init will
+# output an error message.
+# Part of the implementation of Shrug, which is a subset of Git
+
+# Written by Tariq
+
+#set -x
+
+if [ ! -d '.shrug' ]
+then
+        if [ ! -z $1 ]
+        then
+                echo usage: shrug-init
+                exit 0
+        fi
+        mkdir -p .shrug/index .shrug/Repository
+	touch .shrug/COMMIT_LOG
+	touch .shrug/INDEX_LOG
+	touch .shrug/STATUS_LOG
+	for file in *
+	do
+		if [ -f "$file" ]
+		then
+			echo "$file" - untracked >> .shrug/STATUS_LOG
+		fi
+	done
+        echo Initialized empty shrug repository in .shrug
+else
+        echo shrug-init: error: .shrug already exists
+fi
+
+

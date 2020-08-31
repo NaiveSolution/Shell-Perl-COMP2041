@@ -1,0 +1,118 @@
+#!/bin/dash
+# Inputs:
+# [--force](optional), [--cached] (optional), file1 .. filen
+
+# Description:
+# This program removes files from the index folder, or both the cwd and index.
+# In normal operation shrug-rm will remove files from both the index and cwd,
+# but using --cached will remove files only from the index. shrug-rm will also
+# block any attempt to remove a file if the file has been changed either in the index
+# (by calling shrug-add) or the cwd, and will output an error message instead.
+# The --forced option will remove the files regardless of changes made to them
+# and will not output any error messages to the user.
+
+#Fails if:
+#1) filename is not found in the index
+#2) file has been changed and added to index and shrug-rm is called
+#3) the shrug-rm command is not called in the correct way
+#4) there are no commits
+#5) the file in the index is different to both cwd and latest commit
+#6) the file in the index is different to the cwd
+
+# Part of the implementation of Shrug, which is a subset of Git
+
+# Written by Tariq
+
+
+#set -x
+
+if [ ! -d .shrug ]
+then
+        echo shrug-rm: error: no .shrug directory containing shrug repository exists
+        exit 1
+fi
+
+SHRUG_REPO='.shrug/Repository'
+SHRUG_INDEX='.shrug/index'
+FORCED=0
+CACHED=0
+last_commit="$(ls -d "$SHRUG_REPO"/*/ | cut -f3 -d'/' | tail -n -1)"
+
+usage(){
+	echo "usage: shrug-rm [--force] [--cached] <filenames>"
+}
+
+if [ -z "$(ls "$SHRUG_REPO")" ]
+then
+        echo shrug-rm: error: your repository does not have any commits yet
+        exit 0
+fi
+
+if [ "$#" -eq 0 ]; then usage exit 0; fi
+if [ -n "$(echo "$*" | grep -- "--force")" ]; then FORCED=1; fi
+if [ -n "$(echo "$*" | grep -- "--cached")" ]; then CACHED=1; fi
+options=$(expr "$FORCED" + "$CACHED")
+if [ "$options" -ne 0 ]; then shift "$options"; fi
+if [ "$options" -eq 2 ]; then if [ "$1" = '--cached' ]; then usage exit 0; fi; fi
+# Loop through files, and exits if any file violates a rule as above.
+# This will abandon the removal of any files listed, even if some files are valid.
+if [ "$FORCED" -eq 0 ]
+then
+	for file in "$@"
+	do
+		# check if the file exists in index
+        	if [ ! -e "$SHRUG_INDEX"/"$file" ]
+		then
+			echo shrug-rm: error: "'""$file""'" is not in the shrug repository
+			exit 0
+		fi
+		# check if the file is marked for changes in INDEX_LOG
+		if [ "$(cat .shrug/INDEX_LOG | grep " $file " | tail -1 | cut -d ' ' -f4)" = 'staged' ]
+		then
+
+			if [ -e "$SHRUG_REPO"/"$last_commit"/"$file" ] && [ -e "$file" ]
+			then
+				if [ -n "$(diff -q "$file" "$SHRUG_INDEX"/"$file")" ] && [ -e "$file" ]
+                        	then
+                                	echo shrug-rm: error: "'""$file""'" in index is different to both working file and repository
+                        		exit 0
+                       		fi
+			fi
+			if [ "$CACHED" -eq 0 ]
+			then
+				echo shrug-rm: error: "'""$file""'" has changes staged in the index
+				exit 0
+			fi
+		fi
+		# check if the file in the cwd has been changed but hasnt been added to the index
+		if [ -e "$file" ] && [ "$CACHED" -eq 0 ]
+		then
+                        if [ -n "$(diff -q "$file" "$SHRUG_INDEX"/"$file")" ]
+                        then
+                                echo shrug-rm: error: "'""$file""'" in repository is different to working file
+                                exit 0
+                        fi
+		fi
+	done
+fi
+
+# Either the force command has been used or the files are all valid, so loop through all files and remove
+# them from the index only if --cached is used, and both index and cwd if --cached is not used.
+for file in "$@"
+do
+	# check if the file exists in index
+        if [ ! -e "$SHRUG_INDEX"/"$file" ]
+        then
+                echo shrug-rm: error: "'""$file""'" is not in the shrug repository
+        	continue
+        fi
+	if [ "$CACHED" -eq 1 ]
+	then 
+		rm "$SHRUG_INDEX"/"$file"
+		echo rm "$file" "$(date | cut -d ' ' -f4)" >> .shrug/INDEX_LOG
+	else
+		rm "$file" "$SHRUG_INDEX"/"$file"
+		echo rm "$file" "$(date | cut -d ' ' -f4)" >> .shrug/INDEX_LOG
+	fi
+	shrug-update "$file"
+done

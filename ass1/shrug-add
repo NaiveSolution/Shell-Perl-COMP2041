@@ -1,0 +1,45 @@
+#!/bin/dash
+# Inputs:
+# arg1, arg2 .. argN
+
+# Description:
+# Adds the files of arg1..argN, which are in the cwd to .shrug/index
+# Fails if a file listed in args is not in the cwd, or if the file has special
+# characters. If a file exists in the index but not in the cwd, then shrug-add
+# will remove the file from the index.
+# Part of the implementation of Shrug, which is a subset of Git
+
+# Written by Tariq
+
+invalid='[^a-zA-Z_0-9_.\-]'
+if [ ! -d .shrug ]
+then
+	echo shrug-add: error: no .shrug directory containing shrug repository exists
+	exit 1
+fi
+
+for file in "$@"
+do
+	if [ ! -f "$file" ]
+	then
+		if [ -f .shrug/index/"$file" ]
+        	then
+                	rm .shrug/index/"$file"
+			echo rm "$file" "$(date | cut -d ' ' -f4)" >> .shrug/INDEX_LOG
+                	continue
+		else
+			echo shrug-add: error: can not open "'"$file"'"
+			continue
+		fi
+	fi
+	if echo "$file" | egrep -q "$invalid"
+	then
+		echo shrug-add: error: invalid filename "'"$file"'"
+		continue
+	else
+		cp "$file" .shrug/index/"$file"
+		echo add "$file" "$(date | cut -d ' ' -f4)" staged >> .shrug/INDEX_LOG
+	fi
+	shrug-update "$file"
+done
+

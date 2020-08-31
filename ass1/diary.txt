@@ -1,0 +1,26 @@
+<Subset-0>
+
+Date    Start   Stop    Activity        Comments
+1/7/20  11:00   11:11   Reading         Brief skim read through the assignment
+8/7/20  11:00   12:00   Coding          Implementation of shrug-init
+8/7/20  12:00   14:00   Coding          Implementation of shrug-add
+9/7/20  12:00   12:30   Understanding   Understanding the semantics of commit and planning for subset 1
+9/7/20  12:30   14:30   Coding          Implementation of shrug-commit
+9/7/20  16:50   16:53   Coding          Implementation of shrug-log
+9/7/20  16:57   17:00   Testing/Reading Reading and testing reference implementation of shrug-show
+9/7/20  17:00   19:00   Coding          Implementation of shrug-show
+11/7/20 11:33   13:33   Coding          Going back to shrug-commit to get it just like the reference
+
+<Subset-1>
+
+Date    Start   Stop    Activity        Comments
+11/7/20 13:33   14:33   Coding          Implementation of shrug-commit [-a]. Just reused existing code.
+12/7/20 15:14   16:10   Understanding   Playing around with the ref. shrug-rm to discover all the errors.
+13/7/20 10:00   12:30   Coding          Had to change/refactor code. Decided to create logs for rm and add
+13/7/20 13:00   16:00   Coding          Struggling with shrug-rm. But finally got it finished to pass all tests
+14/7/20 10:00   12:00   Coding          Took unnecessarily long to code shrug-status, using the most naive method.
+14/7/20 12:00   17:00   Coding          Wrote the helper function, shrug-update, also using the most naive methods.
+15/7/20 12:00	23:40	Coding		So many problems with my helper function that I had to rewrite all of shrug-status and shrug-update. 
+
+Finished (decided against subset-2)
+

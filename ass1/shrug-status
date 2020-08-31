@@ -1,0 +1,40 @@
+#!/bin/dash
+# Inputs:
+# None
+
+# Description:
+# Prints the status of every file in the cwd, index and last commit
+# Written by Tariq
+
+#set -x
+SHRUG_REPO='.shrug/Repository'
+SHRUG_INDEX='.shrug/index'
+if [ -z "$(ls .shrug/Repository)" ]
+then
+	echo shrug-status: error: your repository does not have any commits yet
+	exit 0
+fi
+
+latest_commit="$(ls -d "$SHRUG_REPO"/*/ | cut -f3 -d'/' | tail -n -1)"
+
+for file in .shrug/index/
+do
+	if [ -f "$file" ]; then shrug-update "$file"; fi
+done
+for file in *
+do
+	if [ -f "$file" ]; then shrug-update "$file"; fi
+done
+for file in .shrug/Repository/"$latest_commit"
+do
+	if [ -f "$file" ]; then shrug-update "$file"; fi
+done
+
+# Run shrug-update on all the files currently in the STATUSLOG
+while read -r line
+do
+        filename="$(echo "$line" | cut -d ' ' -f1)"
+	shrug-update "$filename"
+done < .shrug/STATUS_LOG
+
+cat .shrug/STATUS_LOG | sort | uniq 

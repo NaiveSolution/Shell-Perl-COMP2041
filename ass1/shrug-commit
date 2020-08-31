@@ -1,0 +1,129 @@
+#!/bin/dash
+# Inputs:
+# [-a](optional), -m, commit_message
+
+# Description:
+# This program saves a copy of all the files in .shrug/index into a new
+# subdirectory called .shrug/Repository/N - where N is the commit number
+# starting from 0. Each N subdirectory will have a copy of all the files
+# in .shrug/index.
+
+# A text file will be created in the .shrug folder called COMMIT_LOG which contains
+# information of each commit and its message. The format of COMMIT_LOG is in the form of:
+# <commit_number> <commit_message> <list_of_files(space separated)>\n
+
+# The program will check if the files in the most recent commit folder differ from the
+# files currently in the index folder using -diff; if they have been changed then they 
+# are commited, and if they have not then there are no commits to be made
+
+# Part of the implementation of Shrug, which is a subset of Git
+
+# Written by Tariq
+
+SHRUG_REPO='.shrug/Repository'
+SHRUG_INDEX='.shrug/index'
+
+# Check the repo if there are any commit folders yet
+if [ -z "$(ls -d "$SHRUG_REPO"/*/ 2>/dev/null)" ]
+then
+	next_commit=0
+else
+	latest_commit="$(ls -d "$SHRUG_REPO"/*/ | cut -f3 -d'/' | tail -n -1)"
+	next_commit=`expr "$latest_commit" + 1`
+fi
+
+# Function for creating a new commit folder
+make_new_commit()
+{
+	echo "$next_commit" "$1" >> .shrug/COMMIT_LOG
+	mkdir "$SHRUG_REPO"/"$next_commit"
+	cp -R "$SHRUG_INDEX"/. "$SHRUG_REPO"/"$next_commit"
+	for file in "$SHRUG_INDEX"
+	do
+		#./shrug-update "$file"
+		line=$(cat .shrug/INDEX_LOG | grep -n "add-"$file"" | tail -1 | cut -d ':' -f1)
+		sed -i ""$line"s/staged/committed/g" .shrug/INDEX_LOG
+	done
+	echo Committed as commit "$next_commit"
+	exit 0
+}
+
+if [ "$#" -eq 0 ]
+then
+	echo usage: shrug-commit [-a] -m commit-message
+        exit 0
+fi
+
+# If the user does not input a commit message, or if the message starts with a '-', then exit
+# copied from StackOverflow to get the last argument, regardless of argument numbers
+# https://stackoverflow.com/questions/19678082/get-last-parameter-on-shell-script
+for i in $@; do :; done
+last_argument="$i"
+if [ "-" = $(echo "$i" | cut -c -1) ]
+then
+        echo usage: shrug-commit [-a] -m commit-message
+	exit 0
+fi
+
+# If the user only uses -m
+if [ "$#" -eq 2 ]
+then
+	# If  the first argument isnt -m
+	if [ "$1" != "-m" ]
+	then
+		echo usage: shrug-commit [-a] -m commit-message
+        	exit 0
+	fi
+
+	# If there are no new files between the index and the latest 
+	# commit, then diff each file in index and the recent commit_folder
+	# to check if there are any changes to commit.
+	# Otherwise nothing to commit.
+	if [ -z "$(ls "$SHRUG_INDEX")" ] && [ -z "$(ls "$SHRUG_REPO"/"$latest_commit")" ]
+	then
+		echo nothing to commit
+		exit 0
+	fi	
+	if [ -z "$(diff -br "$SHRUG_INDEX" "$SHRUG_REPO"/"$latest_commit")" ]
+	then
+		change=0
+		for file in "$SHRUG_INDEX"/*
+		do
+        		if [ -n "$(diff -q "$file" "$SHRUG_REPO"/"$latest_commit"/"$(basename "$file")")" ]
+        		then
+                		change=1	
+        		fi
+		done
+		if [ "$change" -eq "1" ]
+		then
+			make_new_commit "$2"
+		else
+			echo nothing to commit
+			exit 0
+		fi
+	fi
+
+	# A new file was added after the last commit
+	make_new_commit "$2"
+fi
+
+# If the user uses -a -m
+if [ "$#" -eq 3 ]
+then
+
+	# If the args are not exactly as specified, then exit
+        if [ "$1" != "-a" ] && [ "$2" != "-m" ]
+        then
+                echo usage: shrug-commit [-a] -m commit-message
+                exit 0
+        fi
+	# Then simply call shrug-add on all the files in the cwd that are the same
+	# in the index.
+	for file in "$SHRUG_INDEX"/*
+	do
+		shrug-add "$(basename "$file")"
+	done
+	# And then have this script call itself but with reduced args
+	shrug-commit '-m' "$3"
+	exit 0
+fi

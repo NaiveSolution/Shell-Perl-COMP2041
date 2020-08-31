@@ -1,0 +1,136 @@
+#!/bin/dash
+# Inputs:
+# None
+
+# Description:
+# Helper script that outputs the status of each file in the cwd, index and latest commit
+# into STATUS_LOG. It is run everytime a shrug command is used. To keep track of any changes,
+# just find the most recent listing of a file and change its status.
+# PS: I know this code is shit. I have never been this embarassed of my own code in my whole life.
+# Written by Tariq
+
+SHRUG_REPO='.shrug/Repository'
+SHRUG_INDEX='.shrug/index'
+file=$1
+#set -x
+# If the file is not already on the STATUS_LOG file, then add it as untracked, otherwise it exists and we leave it
+if [ -z "$(cat .shrug/STATUS_LOG | grep "^"$file" - ")" ]
+then
+        echo "$file" - untracked>> .shrug/STATUS_LOG
+        exit 0
+fi
+
+if [ -z "$(ls .shrug/Repository)" ]
+then
+	exit 0
+fi
+latest_commit="$(ls -d "$SHRUG_REPO"/*/ | cut -f3 -d'/' | tail -n -1)"
+
+# If the file exists in the last commit but not the cwd or index, then it was
+# deleted by shrug-rm or the user
+if [ ! -e "$file" ] && [ ! -e "$SHRUG_INDEX"/"$file" ] && [ -e "$SHRUG_REPO"/"$latest_commit"/"$file" ]
+then
+	sed -i "s/$file -.*$/$file - deleted/g" .shrug/STATUS_LOG
+	exit 0
+fi
+
+# If the file exists in the index, but not the cwd or the last commit
+if [ ! -e "$file" ] && [ -e "$SHRUG_INDEX"/"$file" ] && [ ! -e "$SHRUG_REPO"/"$latest_commit"/"$file" ]
+then
+	sed -i "s/$file -.*$/$file - added to index, file deleted/g" .shrug/STATUS_LOG
+	exit 0
+fi
+
+# If the file exists in the cwd, but not the index or last commit, then its a newly created file,
+# or the file was removed using shrug-rm --cached
+if [ -e "$file" ] && [ ! -e "$SHRUG_INDEX"/"$file" ] && [ ! -e "$SHRUG_REPO"/"$latest_commit"/"$file" ]
+then
+	if [ -n "$(cat .shrug/STATUS_LOG | grep "$1 - " )" ]
+	then
+		sed -i "s/$file -.*$/$file - untracked/g" .shrug/STATUS_LOG
+        else 
+		echo "$file" - untracked>> .shrug/STATUS_LOG
+	fi
+        exit 0
+fi
+
+# If the file exists in the cwd, the index and the last commit, then check it
+if [ -e "$file" ] && [ -e "$SHRUG_INDEX"/"$file" ] && [ -e "$SHRUG_REPO"/"$latest_commit"/"$file" ]
+then
+	if [ -n "$(diff -q "$file" "$SHRUG_INDEX"/"$file")" ]
+	then
+		if [ -n "$(diff -q "$SHRUG_INDEX"/"$file" "$SHRUG_REPO"/"$latest_commit"/"$file")" ]
+		then
+			sed -i "s/$file -.*$/$file - file changed, different changes staged for commit/g" .shrug/STATUS_LOG
+			exit 0
+		else
+			sed -i "s/$file -.*$/$file - file changed, changes not staged for commit/g" .shrug/STATUS_LOG
+			exit 0
+		fi
+	elif [ -n "$(diff -q "$file" "$SHRUG_REPO"/"$latest_commit"/"$file")" ] && [ -z "$(diff -q "$file" "$SHRUG_INDEX"/"$file")" ]
+	then
+		sed -i "s/$file -.*$/$file - file changed, changes staged for commit/g" .shrug/STATUS_LOG
+		exit 0
+	fi
+	if [ -z "$(diff -q "$file" "$SHRUG_REPO"/"$latest_commit"/"$file")" ] && [ -z "$(diff -q "$file" "$SHRUG_INDEX"/"$file")" ]
+	then
+		sed -i "s/$file -.*$/$file - same as repo/g" .shrug/STATUS_LOG
+		exit 0
+	fi
+fi
+
+#set -x
+# If the file exists in the cwd and the index and not the last commit
+if [ -e "$file" ] && [ -e "$SHRUG_INDEX"/"$file" ] && [ ! -e "$SHRUG_REPO"/"$latest_commit"/"$file" ]
+then
+	if [ -n "$(diff -q "$file" "$SHRUG_INDEX"/"$file")" ]
+        then
+		sed -i "s/$file -.*$/$file - added to index, file changed/g" .shrug/STATUS_LOG
+        	exit 0
+        fi
+	sed -i "s/$file -.*$/$file - added to index/g" .shrug/STATUS_LOG
+	exit 0
+fi
+
+# If the file exists in the cwd and the last commit, and not the index
+if [ -e "$file" ] && [ -e "$SHRUG_REPO"/"$latest_commit"/"$file" ] && [ ! -e "$SHRUG_INDEX"/"$file" ]
+then
+	sed -i "s/$file -.*$/$file - untracked/g" .shrug/STATUS_LOG
+        exit 0
+fi
+
+# If the file exists in the index and last commit
+if [ -e "$SHRUG_INDEX"/"$file" ] && [ -e "$SHRUG_REPO"/"$latest_commit"/"$file" ] && [ ! -e "$file" ]
+then
+        sed -i "s/$file -.*$/$file - file deleted/g" .shrug/STATUS_LOG
+        exit 0
+fi
+
+# If the file is not already on the STATUS_LOG file, then add it as untracked, otherwise it exists and we leave it
+if [ -z "$(cat .shrug/STATUS_LOG | grep ""$file" - " )" ]
+then
+        echo "$file" - untracked>> .shrug/STATUS_LOG
+        exit 0
+fi
+
+# if the file doesnt exist anymore, but was previously on the STATUS_LOG as untracked or added to index
+while read -r line
+do
+       filename="$(echo "$line" | cut -d ' ' -f1)"
+       # If the file wasnt in the last commit, then remove from the STATUS_LOG
+       if [ ! -e "$filename" ] && [ ! -e "$SHRUG_INDEX"/"$filename" ] && [ ! -e "$SHRUG_REPO"/"$latest_commit"/"$filename" ]
+       then
+                sed -i "/^"$filename" -.*$/d" .shrug/STATUS_LOG
+       # If the file is in the last commit
+       elif [ ! -e "$filename" ] && [ ! -e "$SHRUG_INDEX"/"$filename" ] && [ -e "$SHRUG_REPO"/"$latest_commit"/"$filename" ]
+       then
+               if [ -n "$(echo "$line" | grep " - untracked")" ]
+               then
+                       sed -i "s/"$filename" - untracked/"$filename" - deleted/g" .shrug/STATUS_LOG
+               fi
+               if [ -n "$(echo "$line" | grep " - added to index")" ]
+               then
+                       sed -i "s/"$filename" - added to index/"$filename" - file deleted/g" .shrug/STATUS_LOG
+               fi
+       fi
+done < .shrug/STATUS_LOG

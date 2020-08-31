@@ -1,0 +1,55 @@
+#!/bin/dash
+# Inputs:
+# <commit_number>:<file_name>
+
+# Description:
+# Prints out the contents of file_name from a specified commit_number
+# Fails if the user:
+# 1) inputs a file_name or commit_number that does not exist
+# 2) does not input any arguments at all
+# 3) the user does not use an integer for the commit_number
+# 4) the user does not provide a file_name
+# Part of the implementation of Shrug, which is a subset of Git
+
+# Written by Tariq
+
+# set -x
+SHRUG_REPO='.shrug/Repository'
+SHRUG_INDEX='.shrug/index'
+commit_number=$(echo "$1" | cut -d ':' -f1)
+file_name=$(echo "$1" | cut -d ':' -f2)
+
+# Failure conditions
+
+if [ "$#" -eq 0 ] || [ -z "$file_name" ]
+then
+	echo "usage: shrug-show <commit_number:file_name>"
+	exit 0
+fi
+
+if [ -z "$commit_number" ]
+then
+        if [ -z $(ls "$SHRUG_INDEX" | grep "$file_name") ]
+        then
+                echo shrug-show: error: "'"$file_name"'" not found in index
+                exit 0
+        else
+                cat "$SHRUG_INDEX"/"$file_name"
+                exit 0
+	fi
+fi
+
+if [ -z $(ls "$SHRUG_REPO" | grep "$commit_number") ]
+then
+	echo shrug-show: error: unknown commit "'"$commit_number"'"
+        exit 0
+fi
+
+if [ -z $(ls "$SHRUG_REPO"/"$commit_number" | grep "$file_name") ]
+then
+	echo shrug-show: error: "'"$file_name"'" not found in commit "$commit_number"
+	exit 0
+fi
+
+cat "$SHRUG_REPO"/"$commit_number"/"$file_name"
+
